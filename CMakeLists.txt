@@ -8,6 +8,7 @@ SET( CMAKE_EXPORT_COMPILE_COMMANDS 1 )
 
 FIND_PACKAGE(OpenCV)
 FIND_PACKAGE(realsense2)
+FIND_PACKAGE(BZip2)
 
 # Compile source files
 FILE(GLOB SOURCES "src/*.cpp")
@@ -21,4 +22,4 @@ SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
 ADD_EXECUTABLE(BroccoliBot ${SOURCES})
 
 # Link libraries into the executable
-TARGET_LINK_LIBRARIES(BroccoliBot ${OpenCV_LIBS})
+TARGET_LINK_LIBRARIES(BroccoliBot ${OpenCV_LIBS} ${realsense2_LIBRARY} ${BZIP2_LIBRARIES})

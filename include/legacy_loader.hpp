@@ -1,18 +1,17 @@
 #pragma once
-#include <librealsense2/rs.hpp>
-#include <librealsense2/hpp/rs_internal.hpp>
 #include <iostream>
 #include <fstream>
+#include <opencv2/core.hpp>
 
 //Y'all gotta be compatible with legacy crap
 class LegacyLoader {
 	public:
 		LegacyLoader(char* file_name);
-		rs2::frameset wait_for_frames();
+		void next_frame();
+		cv::Mat color_frame;
+		cv::Mat depth_frame;
 	private:
 		std::ifstream input_file; 
-    	rs2::syncer sync;
-		rs2::software_device dev;
 		const static int frame_width = 1920;
 		const static int frame_height = 1080;
 		const static int data_length_color = frame_width * frame_height * 3;
@@ -20,6 +19,4 @@ class LegacyLoader {
 		const static int length_s = 60;
 		const static int framerate = 30;
 		const static int frames = length_s * framerate;
-		char rgb_buffer[data_length_color];
-		char depth_buffer[data_length_color];
 };
