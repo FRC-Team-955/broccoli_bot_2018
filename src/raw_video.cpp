@@ -1,54 +1,49 @@
 #include <raw_video.hpp>
 
-RawVideo::RawVideo(char* file_name, Mode mode, cv::Size& frame_size) : mode(mode) {
-	int bzerror;
-	file = fopen ( "myfile.bz2", mode == Mode::Write ? "w" : "r" );
-	if (!file) {
-		std::cerr << "ERROR opening file" << std::endl;
-	}
-	Header init_header;
-	if (mode == Mode::Write) {
-		bzip = BZ2_bzWriteOpen( &bzerror, file, 0, 0, 0 );
-		if (!bzip) {
-			BZ2_bzWriteClose ( &bzerror, bzip, 0, NULL, NULL );
+//TODO: Clean this up!
+//Invalid size checking
+RawVideo::RawVideo(std::string working_dir, Mode mode, cv::Size& frame_size) : working_dir(working_dir), mode(mode) {
+	if (mode == Mode::Read) {
+		if (!opendir(working_dir.c_str())) {
+			std::cerr << "Directory \'" << working_dir << "\' does not exist." << std::endl;
+			exit(EXIT_FAILURE);
 		}
-		init_header.frame_height = frame_size.height;	
-		init_header.frame_width = frame_size.width;	
-		BZ2_bzWrite(&bzerror, bzip, &init_header, sizeof(Header));
+		index++;
+		std::string bgr_name = working_dir + "/bgr-" + std::to_string(index) + ".png";
+		if (access(bgr_name.c_str() , F_OK ) != -1) {
+			cv::Mat sample = cv::imread(bgr_name);
+			frame_size = cv::Size(sample.rows, sample.cols);
+		} else {
+			std::cerr << "No data, " << bgr_name << " does not exist." << std::endl;
+			exit(EXIT_FAILURE);
+		}
 	} else {
-		bzip = BZ2_bzReadOpen( &bzerror, file, 0, 0, NULL, 0 );
-		if (!bzip) {
-			BZ2_bzReadClose ( &bzerror, bzip );
+		if (!opendir(working_dir.c_str())) {
+			mkdir(working_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		}
-		BZ2_bzRead(&bzerror, bzip, &init_header, sizeof(Header));
-		frame_size.height = init_header.frame_height;	
-		frame_size.width = init_header.frame_width;	
 	}
 }
 
 bool RawVideo::next(cv::Mat& depth_frame, cv::Mat& color_frame) {
-	int bzerror;
-#define OP(NAME, OPER) BZ2_bz##OPER(&bzerror, bzip, NAME.data, NAME.total() * NAME.elemSize());
+	index++;
+	std::string dep_name = working_dir + "/dep-" + std::to_string(index) + ".png";
+	std::string bgr_name = working_dir + "/bgr-" + std::to_string(index) + ".png";
 	if (mode == Mode::Write) {
-		OP(depth_frame, Write);	
-		OP(color_frame, Write);	
+		cv::imwrite(dep_name, depth_frame);
+		cv::imwrite(bgr_name, color_frame);
+		return true;
 	} else {
-		OP(depth_frame, Read);	
-		OP(color_frame, Read);	
-	}
-#undef OP
-	return bzerror == BZ_OK || bzerror == BZ_STREAM_END;
-}
-
-RawVideo::~RawVideo() {
-	int bzerror;
-	if (mode == Mode::Write) {
-		BZ2_bzWriteClose ( &bzerror, bzip, 0, NULL, NULL );
-	} else {
-		BZ2_bzReadClose ( &bzerror, bzip );
+		if (access(dep_name.c_str(), F_OK ) != -1 && access(bgr_name.c_str(), F_OK ) != -1) {
+			depth_frame = cv::imread(dep_name);
+			color_frame = cv::imread(bgr_name);
+			cv::waitKey(29);
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 
-void RawVideo::Header::print() {
-	std::cout << "W: " << frame_width << " H: " << frame_height << " Ver: " << version << std::endl;
+void RawVideo::reset_index() {
+	index = 1;
 }
