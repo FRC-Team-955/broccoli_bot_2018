@@ -36,7 +36,6 @@ bool RawVideo::next(cv::Mat& depth_frame, cv::Mat& color_frame) {
 		if (access(dep_name.c_str(), F_OK ) != -1 && access(bgr_name.c_str(), F_OK ) != -1) {
 			depth_frame = cv::imread(dep_name);
 			color_frame = cv::imread(bgr_name);
-			cv::waitKey(29);
 			return true;
 		} else {
 			return false;
