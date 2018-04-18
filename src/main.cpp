@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 		Point3i hsv_min(0, 0, 0);
 		Point3i hsv_max(255, 255, 255);
 
-		namedWindow(trackbar_win_name);
+//		namedWindow(trackbar_win_name);
 
 		{
 			FileStorage fs;
@@ -35,6 +35,7 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		/*
 		createTrackbar("hsv_min_hue", trackbar_win_name, &hsv_min.x, 255);
 		createTrackbar("hsv_min_sat", trackbar_win_name, &hsv_min.y, 255);
 		createTrackbar("hsv_min_val", trackbar_win_name, &hsv_min.z, 255);
@@ -42,6 +43,7 @@ int main(int argc, char **argv) {
 		createTrackbar("hsv_max_hue", trackbar_win_name, &hsv_max.x, 255);
 		createTrackbar("hsv_max_sat", trackbar_win_name, &hsv_max.y, 255);
 		createTrackbar("hsv_max_val", trackbar_win_name, &hsv_max.z, 255);
+		*/
 
 
 		Size frame_size;
@@ -70,6 +72,7 @@ int main(int argc, char **argv) {
 
 		bool run_app = true;
 		bool pause = false;
+		auto t1 = Clock::now();
 		do {
 			if (wrap) {
 				wrap->wait_for_frames(depth_frame, color_frame);
@@ -88,11 +91,12 @@ int main(int argc, char **argv) {
 			inRange(correct_color_lap, Scalar(1, 1, 1), Scalar(255, 255, 255), disp);
 			dilate(disp, disp, morph_kern);
 
-			imshow("disp", disp);
+			//imshow("disp", disp);
 			if (!pause && !raw.next(depth_frame, color_frame)) {
 				raw.reset_index();
 				run_app = false;
 			}
+			/*
 			switch (waitKey(30)) {
 				case 'q':
 					run_app = false;
@@ -101,7 +105,10 @@ int main(int argc, char **argv) {
 					pause = !pause;
 					break;
 			}
+			*/
 		} while (run_app);
+		auto t2 = Clock::now();
+		std::cout << t2-t1 << std::endl;
 
 		FileStorage fs;
 		if (fs.open(trackbar_save_name,
