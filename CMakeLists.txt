@@ -8,7 +8,6 @@ SET( CMAKE_EXPORT_COMPILE_COMMANDS 1 )
 
 FIND_PACKAGE(OpenCV)
 FIND_PACKAGE(realsense2)
-FIND_PACKAGE(BZip2)
 
 # Compile source files
 FILE(GLOB SOURCES "src/*.cpp")

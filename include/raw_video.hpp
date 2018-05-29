@@ -4,7 +4,6 @@
 #include <opencv2/highgui.hpp>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <bzlib.h>
 #include <iostream>
 #include <string>
 #include <dirent.h>
@@ -23,7 +22,6 @@ class RawVideo {
 	private:
 		Mode mode;
 		FILE *file;
-		BZFILE* bzip;
 		unsigned long int index = 0;
 		std::string working_dir;
 };

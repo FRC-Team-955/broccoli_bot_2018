@@ -7,7 +7,7 @@
 class LegacyLoader {
 	public:
 		LegacyLoader(char* file_name);
-		void next_frame();
+		bool next_frame();
 		cv::Mat color_frame;
 		cv::Mat depth_frame;
 	private:

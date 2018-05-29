@@ -6,7 +6,7 @@ LegacyLoader::LegacyLoader(char *file_name) {
 	depth_frame = cv::Mat::zeros(frame_height, frame_width, CV_16UC1);
 }
 
-void LegacyLoader::next_frame() {
-	input_file.read((char*)color_frame.data, data_length_color);
+bool LegacyLoader::next_frame() {
+	return input_file.read((char*)color_frame.data, data_length_color) && 
 	input_file.read((char*)depth_frame.data, data_length_depth);
 }

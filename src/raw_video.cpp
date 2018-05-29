@@ -24,7 +24,7 @@ RawVideo::RawVideo(std::string working_dir, Mode mode, cv::Size& frame_size) : w
 	}
 }
 
-bool RawVideo::next(cv::Mat& depth_frame, cv::Mat& color_frame) {
+bool RawVideo::next(cv::Mat& color_frame, cv::Mat& depth_frame) {
 	index++;
 	std::string dep_name = working_dir + "/dep-" + std::to_string(index) + ".png";
 	std::string bgr_name = working_dir + "/bgr-" + std::to_string(index) + ".png";
