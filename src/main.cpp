@@ -15,6 +15,9 @@
 
 #define DISP(MAT) imshow(#MAT, MAT);
 
+//TODO:
+//	Add 'begin at' and 'start paused' argument options
+
 const char* trackbar_save_name = "config.yml"; //TODO: turn this into an argument
 const char* trackbar_win_name = "config";
 using namespace cv;
@@ -43,6 +46,7 @@ int main(int argc, char **argv) {
 #undef PARAM
 
 		Mat morph_element = getStructuringElement (0, Size (2 * morph_size + 1, 2 * morph_size + 1));
+		Mat morph_tiny = getStructuringElement (0, Size (1,1));
 
 		Size frame_size;
 		
@@ -60,12 +64,21 @@ int main(int argc, char **argv) {
 		Mat color_split[3];
 		Mat laplacian, laplacian_confirmed;
 		Mat lap_conf_mask_combined;
-
 		Mat morph_blob;
+		Mat canny_edges;
+		Mat display_frame;
+
+		std::vector<std::vector<Point>> contours;
+
+		std::chrono::high_resolution_clock::time_point tp_begin;
+		std::chrono::high_resolution_clock::time_point tp_capture;
+		std::chrono::high_resolution_clock::time_point tp_process;
 
 		bool run_app = true;
 		bool pause = false;
 		do {
+			tp_begin = std::chrono::high_resolution_clock::now();
+
 			if (wrap) {
 				wrap->wait_for_frames(depth_frame, color_frame);
 			}
@@ -74,7 +87,7 @@ int main(int argc, char **argv) {
 				raw.reset_index();
 				return 0;
 			}
-			switch (waitKey(1)) {
+			switch (waitKey(30)) {
 				case 'q':
 					run_app = false;
 					break;
@@ -82,28 +95,63 @@ int main(int argc, char **argv) {
 					pause = !pause;
 					break;
 			}
-			
+
+			tp_capture = std::chrono::high_resolution_clock::now();
+
 			int roi_squeeze_px = (float(roi_squeeze) / 255.0) * (frame_size.height / 2);
 			Rect roi (roi_squeeze_px, 0, frame_size.height - (2 * roi_squeeze_px), frame_size.width);
-			//std::cout << roi_squeeze_px << ", " << roi << ", " << frame_size.width << std::endl;
-			//rectangle(color_frame, roi, Scalar(255, 0, 255), 2);
+
 			color_frame_roi = color_frame(roi);
 			depth_frame_roi = depth_frame(roi);
+			color_frame_roi.copyTo(display_frame);
 
-			imshow("color", color_frame_roi);
+			//imshow("color", color_frame_roi);
 			imshow("depth", depth_frame_roi * 3);
+
 			cvtColor(color_frame_roi, color_hsv, CV_RGB2HSV);
 			inRange(color_hsv, Scalar(hue_min, sat_min, val_min), Scalar(hue_max, sat_max, val_max), hsv_mask);
-			//DISP(hsv_mask);
+			DISP(hsv_mask);
+
 			split(color_frame_roi, color_split);
 			Laplacian(color_split[1], laplacian, CV_8UC1);
 			inRange(laplacian, Scalar(lap_thresh), Scalar(255), laplacian_confirmed);
 			//DISP(laplacian_confirmed);
+
 			bitwise_and(laplacian_confirmed, hsv_mask, lap_conf_mask_combined);
 			DISP(lap_conf_mask_combined);
+
 			morphologyEx(lap_conf_mask_combined, morph_blob, MORPH_CLOSE, morph_element);
 			morphologyEx(morph_blob, morph_blob, MORPH_OPEN, morph_element);
-			DISP(morph_blob);
+			//DISP(morph_blob);
+
+			Canny(morph_blob, canny_edges, 128, 128);
+			DISP(canny_edges);
+
+			findContours(canny_edges, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_TC89_L1);
+			drawContours(display_frame, contours, -1, Scalar(255, 255, 0), 2);//CV_FILLED);
+			/*
+			unsigned int largest = 0;
+			int index = -1;
+			for (int i = 0; i < contours.size(); i++) {
+				unsigned int area = contours[i].size();
+				if (area > largest && area > area_thresh * area_thresh) {
+					index = i;
+					largest = area;
+				}
+			}
+
+			if (index > 0) {
+				std::vector<Point> convex;
+				convexHull(contours[index], convex);
+				drawContours(display_frame, std::vector<std::vector<Point>>(1, convex), -1, Scalar(255, 0, 255), 2);//CV_FILLED);
+			}
+			*/
+			DISP(display_frame);
+
+			tp_process = std::chrono::high_resolution_clock::now();
+			std::cout << "Capture time: " << std::chrono::duration_cast<std::chrono::milliseconds>(tp_capture - tp_begin).count() << "ms" << std::endl;
+			std::cout << "Process time: " << std::chrono::duration_cast<std::chrono::milliseconds>(tp_process - tp_capture).count() << "ms" << std::endl;
+			std::cout << std::endl;
 
 		} while (run_app);
 

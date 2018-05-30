@@ -11,3 +11,4 @@ PARAM(lap_thresh, true)
 PARAM(morph_size, false)
 
 PARAM(roi_squeeze, true)
+PARAM(area_thresh, true)
