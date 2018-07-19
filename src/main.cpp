@@ -58,7 +58,9 @@ int main(int argc, char **argv) {
 
 		RawVideo raw(argv[1], is_live ? RawVideo::Mode::Write : RawVideo::Mode::Read, frame_size);
 
-		Mat depth_frame, color_frame;
+		Mat color_frame = cv::Mat::zeros(frame_size, CV_8UC3);
+		Mat depth_frame = cv::Mat::zeros(frame_size, CV_16UC1);
+
 		Mat depth_frame_roi, color_frame_roi;
 		Mat color_hsv, hsv_mask;
 		Mat color_split[3];
@@ -66,6 +68,7 @@ int main(int argc, char **argv) {
 		Mat lap_conf_mask_combined;
 		Mat morph_blob;
 		Mat canny_edges;
+		Mat large_blob_mask;
 		Mat display_frame;
 
 		std::vector<std::vector<Point>> contours;
@@ -105,8 +108,7 @@ int main(int argc, char **argv) {
 			depth_frame_roi = depth_frame(roi);
 			color_frame_roi.copyTo(display_frame);
 
-			//imshow("color", color_frame_roi);
-			imshow("depth", depth_frame_roi * 3);
+			//DISP(depth_frame_roi);
 
 			cvtColor(color_frame_roi, color_hsv, CV_RGB2HSV);
 			inRange(color_hsv, Scalar(hue_min, sat_min, val_min), Scalar(hue_max, sat_max, val_max), hsv_mask);
@@ -118,7 +120,7 @@ int main(int argc, char **argv) {
 			//DISP(laplacian_confirmed);
 
 			bitwise_and(laplacian_confirmed, hsv_mask, lap_conf_mask_combined);
-			DISP(lap_conf_mask_combined);
+			//DISP(lap_conf_mask_combined);
 
 			morphologyEx(lap_conf_mask_combined, morph_blob, MORPH_CLOSE, morph_element);
 			morphologyEx(morph_blob, morph_blob, MORPH_OPEN, morph_element);
@@ -128,24 +130,26 @@ int main(int argc, char **argv) {
 			DISP(canny_edges);
 
 			findContours(canny_edges, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_TC89_L1);
-			drawContours(display_frame, contours, -1, Scalar(255, 255, 0), 2);//CV_FILLED);
-			/*
+
+			for (auto& cont : contours) cont[cont.size() - 1] = cont[0];
+
 			unsigned int largest = 0;
-			int index = -1;
+			int largest_index = -1;
 			for (int i = 0; i < contours.size(); i++) {
-				unsigned int area = contours[i].size();
+				unsigned int area = boundingRect(contours[i]).area();
 				if (area > largest && area > area_thresh * area_thresh) {
-					index = i;
+					largest_index = i;
 					largest = area;
 				}
 			}
+			drawContours(display_frame, contours, -1, Scalar(255, 128, 0), 2);//CV_FILLED);
 
-			if (index > 0) {
-				std::vector<Point> convex;
-				convexHull(contours[index], convex);
-				drawContours(display_frame, std::vector<std::vector<Point>>(1, convex), -1, Scalar(255, 0, 255), 2);//CV_FILLED);
+			if (largest_index != -1) {
+				Rect broccoli_roi = boundingRect(contours[largest_index]);
+				rectangle(display_frame, broccoli_roi, Scalar(0, 0, 255), 2);
+				printf("%f\n", mean(depth_frame_roi(broccoli_roi), morph_blob(broccoli_roi))[0]);
 			}
-			*/
+
 			DISP(display_frame);
 
 			tp_process = std::chrono::high_resolution_clock::now();
