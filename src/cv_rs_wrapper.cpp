@@ -13,11 +13,6 @@ CVRealsenseWrapper::CVRealsenseWrapper(cv::Size depth_size, cv::Size color_size,
 			break;
 		}
 	}
-
-	rs2::frameset data = align.process(pipe.wait_for_frames());
-	rs2::frame depth = data.get_depth_frame();
-	rs2::frame color = data.get_color_frame();
-
 }
 
 void CVRealsenseWrapper::wait_for_frames(cv::Mat& depth_frame, cv::Mat& color_frame) {

@@ -23,7 +23,6 @@ const char* trackbar_win_name = "config";
 using namespace cv;
 
 int main(int argc, char **argv) {
-	if (argc > 1) {
 		bool is_live = argc > 2;
 #define PARAM(NAME, TRACKBAR) int NAME;
 #include <saving.h>
@@ -49,7 +48,7 @@ int main(int argc, char **argv) {
 		Mat morph_tiny = getStructuringElement (0, Size (1,1));
 
 		Size frame_size;
-		
+
 		frame_size = Size(640, 480);
 		CVRealsenseWrapper *wrap = 0;
 		if (is_live) {
@@ -99,16 +98,16 @@ int main(int argc, char **argv) {
 					break;
 			}
 
+
 			tp_capture = std::chrono::high_resolution_clock::now();
 
 			int roi_squeeze_px = (float(roi_squeeze) / 255.0) * (frame_size.height / 2);
-			Rect roi (roi_squeeze_px, 0, frame_size.height - (2 * roi_squeeze_px), frame_size.width);
+			Rect roi (roi_squeeze_px, 0, frame_size.width - (2 * roi_squeeze_px), frame_size.height);
 
 			color_frame_roi = color_frame(roi);
 			depth_frame_roi = depth_frame(roi);
 			color_frame_roi.copyTo(display_frame);
 
-			//DISP(depth_frame_roi);
 
 			cvtColor(color_frame_roi, color_hsv, CV_RGB2HSV);
 			inRange(color_hsv, Scalar(hue_min, sat_min, val_min), Scalar(hue_max, sat_max, val_max), hsv_mask);
@@ -147,15 +146,38 @@ int main(int argc, char **argv) {
 			if (largest_index != -1) {
 				Rect broccoli_roi = boundingRect(contours[largest_index]);
 				rectangle(display_frame, broccoli_roi, Scalar(0, 0, 255), 2);
-				printf("%f\n", mean(depth_frame_roi(broccoli_roi), morph_blob(broccoli_roi))[0]);
+				Mat interest = depth_frame_roi(broccoli_roi);
+
+				const size_t hist_range_start = 1;
+				const size_t hist_range_end = 500;
+				const size_t hist_size = hist_range_end - hist_range_start;
+
+				unsigned int hist[hist_size] = {0};
+				unsigned short* buf_cpy = (unsigned short*)interest.data;
+				unsigned short* buf_end = buf_cpy + interest.total();
+				while (buf_cpy < buf_end) {
+					unsigned short sample = *buf_cpy++;
+					if (sample >= hist_range_start && sample <= hist_range_end)
+						hist[sample - hist_range_start]++;
+				}
+
+				unsigned int max = 1;
+				unsigned int idx = 0;
+				for (unsigned int i = 0; i < hist_size; i++) {
+					unsigned int num = hist[i];
+					if (num > max) { max = num; idx = i; }
+				}
+
+				printf("%lu\n", idx + hist_range_start);
+
 			}
 
 			DISP(display_frame);
 
 			tp_process = std::chrono::high_resolution_clock::now();
-			std::cout << "Capture time: " << std::chrono::duration_cast<std::chrono::milliseconds>(tp_capture - tp_begin).count() << "ms" << std::endl;
-			std::cout << "Process time: " << std::chrono::duration_cast<std::chrono::milliseconds>(tp_process - tp_capture).count() << "ms" << std::endl;
-			std::cout << std::endl;
+			//std::cout << "Capture time: " << std::chrono::duration_cast<std::chrono::milliseconds>(tp_capture - tp_begin).count() << "ms" << std::endl;
+			//std::cout << "Process time: " << std::chrono::duration_cast<std::chrono::milliseconds>(tp_process - tp_capture).count() << "ms" << std::endl;
+			//std::cout << std::endl;
 
 		} while (run_app);
 
@@ -168,10 +190,5 @@ int main(int argc, char **argv) {
 		} else {
 			std::cerr << "Error writing " << trackbar_save_name << std::endl;
 		}
-		return EXIT_SUCCESS;
-	} else {
-		std::cerr << "Usage: " << argv[0] << " <filename> <-c>" << std::endl;
-		return EXIT_FAILURE;
-	}
 }
 #undef MAT

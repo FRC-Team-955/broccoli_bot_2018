@@ -12,7 +12,7 @@ RawVideo::RawVideo(std::string working_dir, Mode mode, cv::Size& frame_size) : w
 		std::string bgr_name = working_dir + "/bgr-" + std::to_string(index) + ".png";
 		if (access(bgr_name.c_str() , F_OK ) != -1) {
 			cv::Mat sample = cv::imread(bgr_name);
-			frame_size = cv::Size(sample.rows, sample.cols);
+			frame_size = cv::Size(sample.cols, sample.rows);
 		} else {
 			std::cerr << "No data, " << bgr_name << " does not exist." << std::endl;
 			exit(EXIT_FAILURE);
