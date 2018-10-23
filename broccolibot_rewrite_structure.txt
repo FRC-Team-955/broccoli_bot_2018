@@ -1,0 +1,37 @@
+Main => 
+
+/* Parse args, getopt_long, etc. */
+
+OpenCVConfigParser config_parser (config_dir, READ);
+
+/* OPTIONAL, used internal too - BroccoliLocator
+    Vision vis (
+        config_parser["param a"],
+        config_parser["param b"],
+        config_parser["param c"],
+    );
+*/
+
+Vision vis (config_parser); //uses vis.read_configs_from_parse() and regular constructor internally
+
+if (display_tuning_panel) {
+    opencv_sliderbar(vis.param_a);
+    opencv_sliderbar(vis.param_b);
+    opencv_sliderbar(vis.param_c);
+}
+
+SimpleSocket sock (config_parse["Socket IP"]);
+
+float broccoli_height = 0.0;
+While (vis.get_result(broccoli_height)) {
+    sock.send(broccoli_height);
+    if (display_tuning_panel && waitKey(1) == 'q') {
+        break;
+    }
+}
+
+if (display_tuning_panel) {
+    OpenCVConfigParser config_parser (config_dir, WRITE);
+    Vision.save_configs(config_parser);
+    config_parse["Socket IP"] = sock.ip;
+}
