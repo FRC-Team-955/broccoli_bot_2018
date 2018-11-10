@@ -3,12 +3,11 @@
 #include <librealsense2/rs.hpp>
 #include <opencv2/core.hpp>
 #include <bgrd_frame_source.hpp>
-#include <optional>
 
-class RealSenseRGBDFrameSource : public RGBDFrameSource {
+class RealSenseBGRDFrameSource : public BGRDFrameSource {
     public:
-        RealSenseRGBDFrameSource(cv::Size size, int fps);
-        std::optional<RGBDFrame> next();
+        RealSenseBGRDFrameSource(cv::Size size, int fps);
+        BGRDFrame next();
 
     private:
 		rs2::pipeline pipe;

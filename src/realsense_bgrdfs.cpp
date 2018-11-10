@@ -1,5 +1,5 @@
 #include <realsense_bgrdfs.hpp>
 
-std::optional<RGBDFrame> RealSenseRGBDFrameSource::next() {
-    return {};
+BGRDFrame RealSenseBGRDFrameSource::next() {
+    return BGRDFrame(cv::Mat(), cv::Mat());
 }

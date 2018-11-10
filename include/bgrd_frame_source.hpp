@@ -1,10 +1,15 @@
 #pragma once
 
 #include <opencv2/core.hpp>
-#include <bgrd_frame.hpp>
 #include <optional>
 
-class RGBDFrameSource {
+struct BGRDFrame {
+    cv::Mat bgr;
+    cv::Mat depth;
+    BGRDFrame(cv::Mat bgr, cv::Mat depth) : bgr(bgr), depth(depth) {}
+};
+
+class BGRDFrameSource {
     public: 
-        virtual std::optional<RGBDFrame> next() = 0;
+        virtual BGRDFrame next() = 0;
 };
