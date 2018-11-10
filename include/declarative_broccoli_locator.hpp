@@ -26,8 +26,7 @@ class DeclarativeBroccoliLocator : public ObjectLocator {
         cv::Vec3i min_hsv, max_hsv;
         int laplacian_threshold;
         int area_threshold;
-        int morph_size;
+        int morph_size = 5;
 		std::vector<std::vector<cv::Point>> contours;
-
-        void resize_morph_element(int size);
+        void resize_morph_element();
 };

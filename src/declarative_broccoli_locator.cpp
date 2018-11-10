@@ -1,15 +1,14 @@
 #include <declarative_broccoli_locator.hpp>
 
 DeclarativeBroccoliLocator::DeclarativeBroccoliLocator(cv::Vec3i min_hsv, cv::Vec3i max_hsv, int laplacian_threshold, int area_threshold, int morph_size) : min_hsv(min_hsv), max_hsv(max_hsv), laplacian_threshold(laplacian_threshold), area_threshold(area_threshold) {
-    resize_morph_element(morph_size);
+    resize_morph_element();
 }
 
 DeclarativeBroccoliLocator::DeclarativeBroccoliLocator(cv::FileStorage& file) {
     load_parameters(file);
 }
 
-void DeclarativeBroccoliLocator::resize_morph_element(int size) {
-    morph_size = size;
+void DeclarativeBroccoliLocator::resize_morph_element() {
     morph_element = getStructuringElement (0, cv::Size (2 * morph_size + 1, 2 * morph_size + 1));
 }
 
@@ -67,6 +66,6 @@ void DeclarativeBroccoliLocator::load_parameters(cv::FileStorage& file) {
     LOAD(laplacian_threshold);
     LOAD(area_threshold);
     LOAD(morph_size);
-    resize_morph_element(morph_size);
+    resize_morph_element();
 }
 #undef LOAD

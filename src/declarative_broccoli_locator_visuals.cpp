@@ -1,7 +1,7 @@
 #include <declarative_broccoli_locator_visuals.hpp>
 
 void DeclarativeBroccoliLocatorVisuals::init_sliders(DeclarativeBroccoliLocator& locator, std::string window_name) {
-    cv::namedWindow(window_name);
+    cv::namedWindow(window_name, 0);
     cv::createTrackbar("H min", window_name, &locator.min_hsv[0], 255);
     cv::createTrackbar("H max", window_name, &locator.max_hsv[0], 255);
 
@@ -11,7 +11,7 @@ void DeclarativeBroccoliLocatorVisuals::init_sliders(DeclarativeBroccoliLocator&
     cv::createTrackbar("V min", window_name, &locator.min_hsv[2], 255);
     cv::createTrackbar("V max", window_name, &locator.max_hsv[2], 255);
 
-    cv::createTrackbar("Lap thresh", window_name, &locator.laplacian_threshold, 1000);
+    cv::createTrackbar("Lap thresh", window_name, &locator.laplacian_threshold, 255);
     cv::createTrackbar("Area thresh", window_name, &locator.area_threshold, 2000);
 }
 
@@ -22,3 +22,7 @@ void DeclarativeBroccoliLocatorVisuals::show_internals(DeclarativeBroccoliLocato
     if (!locator.laplacian_confirmed.empty()) SHOW(locator.laplacian_confirmed);
 }
 #undef SHOW
+
+void DeclarativeBroccoliLocatorVisuals::draw_contours(DeclarativeBroccoliLocator& locator, cv::Mat& image, cv::Scalar color) {
+    cv::drawContours(image, locator.contours, -1, color);
+}
