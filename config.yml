@@ -1,0 +1,8 @@
+%YAML:1.0
+---
+min_hsv: [ 0, 0, 0 ]
+max_hsv: [ 255, 255, 255 ]
+laplacian_threshold: 22
+area_threshold: 137
+morph_size: 5
+width_reduction: 391

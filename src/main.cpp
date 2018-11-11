@@ -4,10 +4,12 @@
 #include <folder_bgrdfs.hpp>
 #include <declarative_broccoli_locator.hpp>
 #include <declarative_broccoli_locator_visuals.hpp>
+#include <histogram.hpp>
+#include <vector>
 
 int main (int argc, char** argv) {
     char* frame_dir = (char*)"../datasets/record_1";
-    char* config_dir = (char*)"config.yml";
+    char* config_dir = (char*)"../config.yml";
     FolderBGRDFrameSource source (frame_dir);
     int width_reduction = 0;
 
@@ -19,6 +21,7 @@ int main (int argc, char** argv) {
         fs.release();
     }
 
+    // Redudant for now, but will become relevant with other crops and detection methods.
     DeclarativeBroccoliLocator* decl_broc_locator_cast = dynamic_cast<DeclarativeBroccoliLocator*>(locator); 
     if (decl_broc_locator_cast) DeclarativeBroccoliLocatorVisuals::init_sliders(*decl_broc_locator_cast, "Settings");
     cv::createTrackbar("Width reduction", "Settings", &width_reduction, 1080/2);
@@ -41,9 +44,6 @@ int main (int argc, char** argv) {
         }
         if (rect.area() > 0) cv::rectangle(display_frame, rect, cv::Scalar(0, 255, 128), 1);
 
-        //int roi_squeeze_px = (float(roi_squeeze) / 255.0) * (frame_size.height / 2);
-        //Rect roi (roi_squeeze_px, 0, frame_size.width - (2 * roi_squeeze_px), frame_size.height);
-
         imshow("display_frame", display_frame);
         switch (cv::waitKey(1) & 0xFF) {
             case 'q':
@@ -61,4 +61,5 @@ int main (int argc, char** argv) {
     fs << "width_reduction" << width_reduction;
     fs.release();
 
+    return EXIT_SUCCESS;
 }
