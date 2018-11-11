@@ -5,7 +5,7 @@
 #include <declarative_broccoli_locator.hpp>
 #include <declarative_broccoli_locator_visuals.hpp>
 #include <histogram.hpp>
-#include <vector>
+#include <iostream>
 
 int main (int argc, char** argv) {
     char* frame_dir = (char*)"../datasets/record_1";
