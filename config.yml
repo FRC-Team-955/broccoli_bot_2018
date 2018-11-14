@@ -8,3 +8,5 @@ morph_size: 4
 width_reduction: 517
 min_hist: 0
 max_hist: 0
+ip: "127.0.0.1"
+port: 5060

@@ -1,15 +1,24 @@
 #include <iostream>
-#include <opencv2/opencv.hpp>
-#include <bgrd_frame_source.hpp>
-#include <folder_bgrdfs.hpp>
-#include <declarative_broccoli_locator.hpp>
-#include <declarative_broccoli_locator_visuals.hpp>
-#include <histogram.hpp>
-#include <histogram_visuals.hpp>
-#include <iostream>
-
 #include <chrono>
 
+#include <opencv2/opencv.hpp>
+
+#include <bgrd_frame_source.hpp>
+#include <folder_bgrdfs.hpp>
+
+#include <declarative_broccoli_locator.hpp>
+#include <declarative_broccoli_locator_visuals.hpp>
+
+#include <histogram.hpp>
+#include <histogram_visuals.hpp>
+
+#include <wo_socket.hpp>
+
+/*
+ * TODO: 
+ * Wrapper layer for sockets, motion server communication
+ * Unit tests
+ */
 int main (int argc, char** argv) {
     // Command line arguments
     if (argc < 2) {
@@ -20,10 +29,7 @@ int main (int argc, char** argv) {
     bool reading_from_folder = argc >= 3;
     char* frame_dir = reading_from_folder ? argv[2] : (char*)"INVALID";
     bool show_visuals = argc == 4;
-
-    // Generic image processing elements
-    BGRDFrameSource* source;
-    ObjectLocator* locator;
+    bool enable_networking = true;
 
     // Runtime image processing variables
     int width_reduction = 0;
@@ -33,6 +39,15 @@ int main (int argc, char** argv) {
     cv::Mat display_frame;
     BGRDFrame frameset = BGRDFrame(cv::Mat(), cv::Mat());
 
+    // Runtime network variables
+    std::string ip = "invalid";
+    int port = 5060;
+    char* client_id = (char*)"id:vision\n";
+
+    // Generic image processing elements
+    BGRDFrameSource* source;
+    ObjectLocator* locator;
+
     // Read config, set up locator
     { 
         cv::FileStorage fs(config_dir, CV_STORAGE_FORMAT_YAML | CV_STORAGE_READ);
@@ -40,8 +55,16 @@ int main (int argc, char** argv) {
         fs["width_reduction"] >> width_reduction;
         fs["min_hist"] >> min_hist;
         fs["max_hist"] >> max_hist;
+        fs["percentile"] >> percentile;
+        fs["ip"] >> ip;
+        fs["port"] >> port;
         fs.release();
     }
+
+    // Socket communication
+    bool socket_needs_init = true;
+    WriteOnlySocket* sock = nullptr;
+    if (enable_networking) sock = new WriteOnlySocket(ip, port);
 
     // Redudant for now, but will become relevant with other crops and detection methods.
     DeclarativeBroccoliLocator* decl_broc_locator_cast = dynamic_cast<DeclarativeBroccoliLocator*>(locator); 
@@ -50,8 +73,7 @@ int main (int argc, char** argv) {
     if (reading_from_folder) {
         source = new FolderBGRDFrameSource (argv[2]);
     } else {
-        std::cerr << "Unimplemented!" << std::endl;
-        return EXIT_FAILURE;
+        throw std::logic_error("Unimplemented!");
     }
 
     // Create UI primitives
@@ -70,7 +92,21 @@ int main (int argc, char** argv) {
     while (run) {
         // Retreive frames
         if (!paused) frameset = source->next().reduce_width(width_reduction);
-        if (frameset.bgr.empty()) break; // Abort early if there is no data
+        if (frameset.bgr.empty()) throw std::runtime_error("Input frame was empty."); // Abort early if there is no data
+
+        // Make sure the socket is still open
+        if (enable_networking) {
+            if (sock->try_connect()) {
+                if (socket_needs_init) {
+                    if (sock->write(client_id, strlen(client_id)) > 0) {
+                        socket_needs_init = false;
+                    }
+                }
+            } else {
+                std::cerr << "Warning: Socket has not connected yet. Failed attempts: " 
+                    << sock->get_failed_connection_attempts() << std::endl;
+            }
+        }
 
         // Set up display frame
         if (show_visuals) frameset.bgr.copyTo(display_frame);
@@ -87,14 +123,26 @@ int main (int argc, char** argv) {
             depth_hist.clear();
             depth_hist.insert_image(sample);
 
-            std::cout << depth_hist.take_percentile(percentile) << std::endl;
+            unsigned short broccoli_depth = depth_hist.take_percentile(percentile);
+                std::cout << broccoli_depth << std::endl;
+
+            // Send detection
+            if (enable_networking) {
+                if (sock->try_connect()) {
+                    char message_buf[64];
+                    snprintf(message_buf, 64, "%hu\n", broccoli_depth);
+                    sock->write(message_buf, strlen(message_buf));
+                }
+            } else {
+                std::cout << broccoli_depth << std::endl;
+            }
         }
 
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-        std::cout << "Locate time: " << std::chrono::duration_cast<std::chrono::milliseconds>(locate - begin).count() << "ms ";        // Find broccoli
-        std::cout << "Hist time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - locate).count() << "ms" <<std::endl;        // Find broccoli
-        
+        std::cout << "Locate time: " << std::chrono::duration_cast<std::chrono::milliseconds>(locate - begin).count() << "ms ";
+        std::cout << "Hist time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - locate).count() << "ms" <<std::endl;
+
         // Handle UI
         if (show_visuals) {
             // Declarative broccoli detector ONLY
@@ -127,6 +175,9 @@ int main (int argc, char** argv) {
         fs << "width_reduction" << width_reduction;
         fs << "min_hist" << min_hist;
         fs << "max_hist" << max_hist;
+        fs << "percentile" << percentile;
+        fs << "ip" << ip;
+        fs << "port" << port;
         fs.release();
     }
     return EXIT_SUCCESS;
