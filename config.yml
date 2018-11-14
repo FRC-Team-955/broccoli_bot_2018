@@ -6,7 +6,8 @@ laplacian_threshold: 33
 area_threshold: 193
 morph_size: 4
 width_reduction: 517
-min_hist: 0
-max_hist: 0
+min_hist: 10
+max_hist: 4000
+percentile: 5.0000000000000000e-01
 ip: "127.0.0.1"
 port: 5060

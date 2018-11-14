@@ -19,6 +19,7 @@
  * Wrapper layer for sockets, motion server communication
  * Unit tests
  */
+
 int main (int argc, char** argv) {
     // Command line arguments
     if (argc < 2) {
@@ -92,10 +93,10 @@ int main (int argc, char** argv) {
     while (run) {
         // Retreive frames
         if (!paused) frameset = source->next().reduce_width(width_reduction);
-        if (frameset.bgr.empty()) throw std::runtime_error("Input frame was empty."); // Abort early if there is no data
+        if (frameset.bgr.empty()) break;
 
         // Make sure the socket is still open
-        if (enable_networking) {
+        if (enable_networking && !!sock) {
             if (sock->try_connect()) {
                 if (socket_needs_init) {
                     if (sock->write(client_id, strlen(client_id)) > 0) {
@@ -124,11 +125,10 @@ int main (int argc, char** argv) {
             depth_hist.insert_image(sample);
 
             unsigned short broccoli_depth = depth_hist.take_percentile(percentile);
-                std::cout << broccoli_depth << std::endl;
 
             // Send detection
             if (enable_networking) {
-                if (sock->try_connect()) {
+                if (!!sock && sock->try_connect()) {
                     char message_buf[64];
                     snprintf(message_buf, 64, "%hu\n", broccoli_depth);
                     sock->write(message_buf, strlen(message_buf));
