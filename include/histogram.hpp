@@ -7,6 +7,7 @@
 
 template <class T>
 class Histogram {
+    template <class K> friend class HistogramVisuals;
     public:
         Histogram(T min_input, T max_input);
         inline void insert(T input);
