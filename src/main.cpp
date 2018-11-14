@@ -12,6 +12,9 @@ int main (int argc, char** argv) {
     char* config_dir = (char*)"../config.yml";
     FolderBGRDFrameSource source (frame_dir);
     int width_reduction = 0;
+    int min_hist = 10;
+    int max_hist = 3000;
+    float percentile = 25.0 / 100.0;
 
     ObjectLocator* locator;
     { 
@@ -26,6 +29,8 @@ int main (int argc, char** argv) {
     if (decl_broc_locator_cast) DeclarativeBroccoliLocatorVisuals::init_sliders(*decl_broc_locator_cast, "Settings");
     cv::createTrackbar("Width reduction", "Settings", &width_reduction, 1080/2);
 
+    auto hist = Histogram<unsigned short>(min_hist, max_hist);
+
     cv::Mat display_frame;
     bool run = true;
     bool paused = false;
@@ -38,11 +43,17 @@ int main (int argc, char** argv) {
         frameset.bgr.copyTo(display_frame);
 
         cv::Rect rect = locator->locate(frameset.bgr);
-        if (decl_broc_locator_cast) {
+        if (!!decl_broc_locator_cast) {
             DeclarativeBroccoliLocatorVisuals::show_internals(*decl_broc_locator_cast);
             DeclarativeBroccoliLocatorVisuals::draw_contours(*decl_broc_locator_cast, display_frame, cv::Scalar(128, 0, 255));
         }
-        if (rect.area() > 0) cv::rectangle(display_frame, rect, cv::Scalar(0, 255, 128), 1);
+        if (rect.area() > 0) {
+            cv::rectangle(display_frame, rect, cv::Scalar(0, 255, 128), 1);
+            cv::Mat sample = frameset.depth(rect);
+            hist.clear();
+            hist.insert_image(sample);
+            std::cout << hist.take_percentile(percentile) << std::endl;
+        }
 
         imshow("display_frame", display_frame);
         switch (cv::waitKey(1) & 0xFF) {

@@ -3,6 +3,8 @@
 #include <opencv2/core.hpp>
 #include <string.h>
 
+/* TODO: Arithmetic check on template, unit tests */
+
 template <class T>
 class Histogram {
     public:
