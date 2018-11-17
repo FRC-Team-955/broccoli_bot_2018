@@ -14,37 +14,42 @@ WriteOnlySocket::WriteOnlySocket(std::string hostname, int portno) : portno(port
 			(char *)&serv_addr.sin_addr.s_addr,
 			server->h_length);
 	serv_addr.sin_port = htons(portno);
-    try_connect();
+    keepalive();
 }
 
 size_t WriteOnlySocket::write(void* data, size_t length) {
-    int ret = send(sockfd, data, length, 0);
+    if (!socket_is_connected) return 0;
+    int ret = ::write(sockfd, data, length);
     if (ret == -1) {
         if (errno == EWOULDBLOCK) {
             return 0;
         } else {
-            throw std::runtime_error(strerror(errno));
+            socket_is_connected = false;
+            shutdown(sockfd, SHUT_RDWR);
             return 0;
         }
     }
     return ret;
 }
 
-bool WriteOnlySocket::try_connect() {
+bool WriteOnlySocket::keepalive() {
     if (socket_is_connected) return true;
     if (connect(sockfd,(struct sockaddr *) &serv_addr, sizeof(serv_addr)) == 0) {
-        printf("CONNECTED!\n");
         socket_is_connected = true;
-        failed_connection_attempts = 0;
         return true;
     } else {
+        printf("ERRNO %s\n", strerror(errno));
+        /*
         switch (errno) {
+            case EISCONN: //Fallthrough
             case EALREADY: socket_is_connected = true; return true; break;
             case ECONNREFUSED: //Fallthrough
-            case EINPROGRESS: failed_connection_attempts++; break;
+            //case ECONNABORTED: //Fallthrough
             default: throw std::runtime_error(strerror(errno)); break;
         }
         return false;
+        */
+        return true;
     }
 }
 
@@ -55,8 +60,4 @@ void WriteOnlySocket::disconnect() {
 
 WriteOnlySocket::~WriteOnlySocket() {
     disconnect();
-}
-
-int WriteOnlySocket::get_failed_connection_attempts() {
-    return failed_connection_attempts;
 }

@@ -12,11 +12,11 @@
 #include <histogram.hpp>
 #include <histogram_visuals.hpp>
 
-#include <wo_socket.hpp>
+#include <motion_server_connection.hpp>
 
-/*
- * TODO: 
+/* TODO: 
  * Wrapper layer for sockets, motion server communication
+ * Better config management?
  * Unit tests
  */
 
@@ -63,9 +63,8 @@ int main (int argc, char** argv) {
     }
 
     // Socket communication
-    bool socket_needs_init = true;
-    WriteOnlySocket* sock = nullptr;
-    if (enable_networking) sock = new WriteOnlySocket(ip, port);
+    MotionServerConnection* sock = nullptr;
+    if (enable_networking) sock = new MotionServerConnection(ip, port, "id:vision\n");
 
     // Redudant for now, but will become relevant with other crops and detection methods.
     DeclarativeBroccoliLocator* decl_broc_locator_cast = dynamic_cast<DeclarativeBroccoliLocator*>(locator); 
@@ -95,18 +94,10 @@ int main (int argc, char** argv) {
         if (!paused) frameset = source->next().reduce_width(width_reduction);
         if (frameset.bgr.empty()) break;
 
-        // Make sure the socket is still open
-        if (enable_networking && !!sock) {
-            if (sock->try_connect()) {
-                if (socket_needs_init) {
-                    if (sock->write(client_id, strlen(client_id)) > 0) {
-                        socket_needs_init = false;
-                    }
-                }
-            } else {
-                std::cerr << "Warning: Socket has not connected yet. Failed attempts: " 
-                    << sock->get_failed_connection_attempts() << std::endl;
-            }
+        // Poll socket availability
+        if (enable_networking && !!sock && sock->keepalive()) {
+            //std::cerr << "Warning: Socket has not connected yet" << std::endl;
+            sock->send_u16(0);
         }
 
         // Set up display frame
@@ -128,10 +119,8 @@ int main (int argc, char** argv) {
 
             // Send detection
             if (enable_networking) {
-                if (!!sock && sock->try_connect()) {
-                    char message_buf[64];
-                    snprintf(message_buf, 64, "%hu\n", broccoli_depth);
-                    sock->write(message_buf, strlen(message_buf));
+                if (!!sock && sock->keepalive()) {
+                    sock->send_u16(broccoli_depth);
                 }
             } else {
                 std::cout << broccoli_depth << std::endl;

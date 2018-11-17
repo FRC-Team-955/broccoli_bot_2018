@@ -14,11 +14,9 @@ class WriteOnlySocket {
         WriteOnlySocket (std::string hostname, int portno);
         size_t write(void* data, size_t length);
         ~WriteOnlySocket ();
-        bool try_connect();
-        int get_failed_connection_attempts();
+        bool keepalive();
     private:
         void disconnect();
-        int failed_connection_attempts = 0;
 		int sockfd, portno;
         bool socket_is_connected = false;
 		struct sockaddr_in serv_addr;
