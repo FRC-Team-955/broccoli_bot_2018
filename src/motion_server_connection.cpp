@@ -20,7 +20,3 @@ void MotionServerConnection::send_u16(unsigned short input) {
     snprintf(message_buf, 64, "%hu\n", input);
     sock.write(message_buf, strlen(message_buf));
 }
-
-MotionServerConnection::~MotionServerConnection() {
-    sock.disconnect();
-}

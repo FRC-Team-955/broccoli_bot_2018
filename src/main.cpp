@@ -10,6 +10,7 @@
 
 #include <bgrd_frame_source.hpp>
 #include <folder_bgrdfs.hpp>
+#include <realsense_bgrdfs.hpp>
 
 #include <declarative_broccoli_locator.hpp>
 #include <declarative_broccoli_locator_visuals.hpp>
@@ -20,8 +21,7 @@
 #include <motion_server_connection.hpp>
 
 /* TODO: 
- * Wrapper layer for sockets, motion server communication
- * Better config management?
+ * Fix close-on-socket-disconnect error?!
  * Unit tests
  */
 
@@ -60,7 +60,6 @@ int main (int argc, char** argv) {
                 break;
         }
     }
-    if (read_from_folder) printf("READ FROM: %s\n", dataset_dir);
 
     // Runtime image processing variables
     int width_reduction = 0;
@@ -97,13 +96,13 @@ int main (int argc, char** argv) {
     if (enable_networking) sock = new MotionServerConnection(ip, port, client_id);
 
     // Redudant for now, but will become relevant with other crops and detection methods.
-    DeclarativeBroccoliLocator* decl_broc_locator_cast = dynamic_cast<DeclarativeBroccoliLocator*>(locator); 
+    DeclarativeBroccoliLocator* decl_broc_locator_cast = static_cast<DeclarativeBroccoliLocator*>(locator); 
 
     // Choose frame source
     if (read_from_folder) {
         source = new FolderBGRDFrameSource (dataset_dir);
     } else {
-        throw std::logic_error("Unimplemented!");
+        source = new RealSenseBGRDFrameSource(cv::Size(640, 480), 30);
     }
 
     // Create UI primitives
