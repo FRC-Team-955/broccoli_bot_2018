@@ -1,3 +1,8 @@
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <iostream>
 #include <chrono>
 
@@ -20,17 +25,42 @@
  * Unit tests
  */
 
+void print_usage (char* program_name) {
+    fprintf(stderr, "Usage: %s <config.yml> -d <dataset_dir> -s\n"
+            "\tconfig.yml: Config file directory\n"
+            "\t-d : Optional dataset directory\n"
+            "\t-u : Show UI components (Requires X server)\n"
+            "\t-n : Disable networking (Just prints results)\n"
+            , program_name);
+}
 int main (int argc, char** argv) {
     // Command line arguments
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <config.yml> (<dataset_dir>) (--show_visuals)" << std::endl;
+        print_usage(argv[0]);
         return EXIT_FAILURE;
     }
+    optind = 2; //Skip config dir
     char* config_dir = argv[1];
-    bool reading_from_folder = argc >= 3;
-    char* frame_dir = reading_from_folder ? argv[2] : (char*)"INVALID";
-    bool show_visuals = argc == 4;
     bool enable_networking = true;
+    bool show_visuals = false;
+    char dataset_dir[1024] = {0};
+    bool read_from_folder = false;
+
+    int opt;
+    while ((opt = getopt(argc, argv, "d:un")) != -1) {
+        switch (opt) {
+            case 'n': enable_networking = false; break;
+            case 'u': show_visuals = true; break;
+            case 'd': read_from_folder = true;
+                strncpy(dataset_dir, optarg, 1024);
+                break;
+            default:
+                print_usage(argv[0]);
+                return EXIT_FAILURE;
+                break;
+        }
+    }
+    if (read_from_folder) printf("READ FROM: %s\n", dataset_dir);
 
     // Runtime image processing variables
     int width_reduction = 0;
@@ -70,8 +100,8 @@ int main (int argc, char** argv) {
     DeclarativeBroccoliLocator* decl_broc_locator_cast = dynamic_cast<DeclarativeBroccoliLocator*>(locator); 
 
     // Choose frame source
-    if (reading_from_folder) {
-        source = new FolderBGRDFrameSource (argv[2]);
+    if (read_from_folder) {
+        source = new FolderBGRDFrameSource (dataset_dir);
     } else {
         throw std::logic_error("Unimplemented!");
     }
