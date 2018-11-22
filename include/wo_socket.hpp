@@ -15,8 +15,8 @@ class WriteOnlySocket {
         size_t write(void* data, size_t length);
         ~WriteOnlySocket ();
         bool keepalive();
-    private:
         void disconnect();
+    private:
 		int sockfd, portno;
         bool socket_is_connected = false;
 		struct sockaddr_in serv_addr;

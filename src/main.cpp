@@ -41,9 +41,9 @@ int main (int argc, char** argv) {
     BGRDFrame frameset = BGRDFrame(cv::Mat(), cv::Mat());
 
     // Runtime network variables
+    std::string client_id = "id:vision\n";
     std::string ip = "invalid";
     int port = 5060;
-    char* client_id = (char*)"id:vision\n";
 
     // Generic image processing elements
     BGRDFrameSource* source;
@@ -64,7 +64,7 @@ int main (int argc, char** argv) {
 
     // Socket communication
     MotionServerConnection* sock = nullptr;
-    if (enable_networking) sock = new MotionServerConnection(ip, port, "id:vision\n");
+    if (enable_networking) sock = new MotionServerConnection(ip, port, client_id);
 
     // Redudant for now, but will become relevant with other crops and detection methods.
     DeclarativeBroccoliLocator* decl_broc_locator_cast = dynamic_cast<DeclarativeBroccoliLocator*>(locator); 
@@ -94,11 +94,8 @@ int main (int argc, char** argv) {
         if (!paused) frameset = source->next().reduce_width(width_reduction);
         if (frameset.bgr.empty()) break;
 
-        // Poll socket availability
-        if (enable_networking && !!sock && sock->keepalive()) {
-            //std::cerr << "Warning: Socket has not connected yet" << std::endl;
-            sock->send_u16(0);
-        }
+        // Socket keepalive
+        if (enable_networking) sock->keepalive();
 
         // Set up display frame
         if (show_visuals) frameset.bgr.copyTo(display_frame);

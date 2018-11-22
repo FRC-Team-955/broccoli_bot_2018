@@ -24,8 +24,7 @@ size_t WriteOnlySocket::write(void* data, size_t length) {
         if (errno == EWOULDBLOCK) {
             return 0;
         } else {
-            socket_is_connected = false;
-            shutdown(sockfd, SHUT_RDWR);
+            disconnect();
             return 0;
         }
     }
