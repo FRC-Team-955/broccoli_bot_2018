@@ -21,8 +21,9 @@
 #include <motion_server_connection.hpp>
 
 /* TODO: 
- * Fix close-on-socket-disconnect error?!
- * Unit tests
+ * Move all top-level operations (literally everything in main() that isn't command line parsing) into a class
+ * Use the shiny new socket classes you made for the robotics team
+ * Unit tests? Unit tests.
  */
 
 void print_usage (char* program_name) {
@@ -33,6 +34,7 @@ void print_usage (char* program_name) {
             "\t-n : Disable networking (Just prints results)\n"
             , program_name);
 }
+
 int main (int argc, char** argv) {
     // Command line arguments
     if (argc < 2) {
@@ -80,7 +82,7 @@ int main (int argc, char** argv) {
 
     // Read config, set up locator
     { 
-        cv::FileStorage fs(config_dir, CV_STORAGE_FORMAT_YAML | CV_STORAGE_READ);
+        cv::FileStorage fs(config_dir, cv::FileStorage::FORMAT_YAML | cv::FileStorage::READ);
         locator = new DeclarativeBroccoliLocator(fs);
         fs["width_reduction"] >> width_reduction;
         fs["min_hist"] >> min_hist;
@@ -185,7 +187,7 @@ int main (int argc, char** argv) {
 
     // Save and quit
     {
-        cv::FileStorage fs(config_dir, CV_STORAGE_FORMAT_YAML | CV_STORAGE_WRITE);
+        cv::FileStorage fs(config_dir, cv::FileStorage::FORMAT_YAML | cv::FileStorage::WRITE);
         locator->save_parameters(fs);
         fs << "width_reduction" << width_reduction;
         fs << "min_hist" << min_hist;

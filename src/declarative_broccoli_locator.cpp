@@ -14,7 +14,7 @@ void DeclarativeBroccoliLocator::resize_morph_element() {
 
 cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame) {
     contours.clear();
-    cv::cvtColor(frame, color_hsv, CV_RGB2HSV);
+    cv::cvtColor(frame, color_hsv, cv::COLOR_RGB2HSV);
     cv::inRange(color_hsv, min_hsv, max_hsv, hsv_mask);
 
     cv::split(frame, color_split);
@@ -28,7 +28,7 @@ cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame) {
 
     cv::Canny(morph_blob, canny_edges, 128, 128);
 
-    cv::findContours(canny_edges, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_TC89_L1);
+    cv::findContours(canny_edges, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_TC89_L1);
 
     for (auto& cont : contours) cont[cont.size() - 1] = cont[0];
 
