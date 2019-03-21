@@ -15,8 +15,8 @@ class FrameDirectory {
     private:
         unsigned int frame_index = 0;
         char buf[512];
-        char* name_format;
         char* directory;
+        char* name_format;
 };
 
 class FrameWriter {

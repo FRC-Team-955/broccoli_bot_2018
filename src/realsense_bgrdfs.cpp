@@ -1,6 +1,6 @@
 #include <realsense_bgrdfs.hpp>
 
-RealSenseBGRDFrameSource::RealSenseBGRDFrameSource(cv::Size size, int fps) : align(RS2_STREAM_COLOR), image_size(size) {
+RealSenseBGRDFrameSource::RealSenseBGRDFrameSource(cv::Size size, int fps) : image_size(size), align(RS2_STREAM_COLOR) {
 	rs2::config cfg;
 	cfg.enable_stream(RS2_STREAM_DEPTH, size.width, size.height, RS2_FORMAT_Z16, fps);
 	cfg.enable_stream(RS2_STREAM_COLOR, size.width, size.height, RS2_FORMAT_BGR8, fps);

@@ -1,6 +1,6 @@
 #include <motion_server_connection.hpp>
 
-MotionServerConnection::MotionServerConnection(std::string ip, int port, std::string id) : sock(ip, port), id(id) {}
+MotionServerConnection::MotionServerConnection(std::string ip, int port, std::string id) : id(id), sock(ip, port) {}
 
 bool MotionServerConnection::keepalive() {
     if (sock.keepalive()) {

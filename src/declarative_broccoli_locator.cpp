@@ -34,7 +34,7 @@ cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame) {
 
     unsigned int largest = 0;
     int largest_index = -1;
-    for (int i = 0; i < contours.size(); i++) {
+    for (unsigned long i = 0; i < contours.size(); i++) {
         unsigned int area = boundingRect(contours[i]).area();
         if (area > largest && area > area_threshold * area_threshold) {
             largest_index = i;
