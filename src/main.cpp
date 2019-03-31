@@ -32,6 +32,7 @@ void print_usage (char* program_name) {
             "\t-d : Optional dataset directory\n"
             "\t-u : Show UI components (Requires X server)\n"
             "\t-n : Disable networking (Just prints results)\n"
+            "\t-s : Optional dataset output directory\n"
             , program_name);
 }
 
@@ -46,15 +47,19 @@ int main (int argc, char** argv) {
     bool enable_networking = true;
     bool show_visuals = false;
     char dataset_dir[1024] = {0};
+    char* dataset_output_dir = nullptr;
     bool read_from_folder = false;
 
     int opt;
-    while ((opt = getopt(argc, argv, "d:un")) != -1) {
+    while ((opt = getopt(argc, argv, "d:uns:")) != -1) {
         switch (opt) {
             case 'n': enable_networking = false; break;
             case 'u': show_visuals = true; break;
             case 'd': read_from_folder = true;
                 strncpy(dataset_dir, optarg, 1024);
+                break;
+            case 's': 
+                dataset_output_dir = optarg;
                 break;
             default:
                 print_usage(argv[0]);
@@ -77,8 +82,11 @@ int main (int argc, char** argv) {
     int port = 5060;
 
     // Generic image processing elements
-    BGRDFrameSource* source;
-    ObjectLocator* locator;
+    BGRDFrameSource* source = nullptr;
+    ObjectLocator* locator = nullptr;
+    FrameWriter* dataset_writer = nullptr;
+    if (dataset_output_dir) 
+        dataset_writer = new FrameWriter(dataset_output_dir, (char*)"%s/mask-%i.png");
 
     // Read config, set up locator
     { 
@@ -120,6 +128,8 @@ int main (int argc, char** argv) {
     bool run = true;
     bool paused = false;
 
+    cv::Mat output_mask;
+
     while (run) {
         // Retreive frames
         if (!paused) frameset = source->next().reduce_width(width_reduction);
@@ -133,7 +143,13 @@ int main (int argc, char** argv) {
 
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        cv::Rect roi = locator->locate(frameset.bgr);
+        cv::Rect roi = locator->locate(frameset.bgr, output_mask);
+
+        cv::Mat mask(output_mask.size(), CV_8UC1, cv::Scalar::all(0));
+        mask(roi) = 255;
+        cv::bitwise_and(mask, output_mask, output_mask);
+        if (dataset_writer)
+            dataset_writer->next(output_mask);
 
         std::chrono::steady_clock::time_point locate = std::chrono::steady_clock::now();
 

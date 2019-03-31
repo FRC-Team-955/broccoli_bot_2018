@@ -12,7 +12,7 @@ void DeclarativeBroccoliLocator::resize_morph_element() {
     morph_element = getStructuringElement (0, cv::Size (2 * morph_size + 1, 2 * morph_size + 1));
 }
 
-cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame) {
+cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame, cv::Mat& output_mask) {
     contours.clear();
     cv::cvtColor(frame, color_hsv, cv::COLOR_RGB2HSV);
     cv::inRange(color_hsv, min_hsv, max_hsv, hsv_mask);
@@ -25,6 +25,8 @@ cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame) {
 
     cv::morphologyEx(lap_conf_mask_combined, morph_blob, cv::MORPH_CLOSE, morph_element);
     cv::morphologyEx(morph_blob, morph_blob, cv::MORPH_OPEN, morph_element);
+
+    morph_blob.copyTo(output_mask);
 
     cv::Canny(morph_blob, canny_edges, 128, 128);
 

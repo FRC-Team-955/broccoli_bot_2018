@@ -9,7 +9,7 @@ class DeclarativeBroccoliLocator : public ObjectLocator {
     public:
         DeclarativeBroccoliLocator(cv::FileStorage& file);
         DeclarativeBroccoliLocator(cv::Vec3i min_hsv, cv::Vec3i max_hsv, int laplacian_threshold, int area_threshold, int morph_size);
-        cv::Rect locate(cv::Mat& frame); 
+        cv::Rect locate(cv::Mat& frame, cv::Mat& output_mask); 
 
         void load_parameters(cv::FileStorage& file);
         void save_parameters(cv::FileStorage& file);
