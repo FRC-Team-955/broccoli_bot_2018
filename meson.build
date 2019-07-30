@@ -1,4 +1,4 @@
-project('broccolibot_vision_2018', 'cpp')
+project('broccolibot_vision_2018', 'cpp', default_options : ['cpp_std=c++11'])
 
 sources = [
     'src/bgrd_frame_source.cpp',
@@ -15,8 +15,9 @@ sources = [
 include_dir = include_directories('include')
 
 dependencies = [
-    dependency('opencv4'),
-    dependency('realsense2')
+    dependency('opencv'),
+    dependency('realsense2'),
+    dependency('boost', modules : ['system']),
 ]
 
 executable(
