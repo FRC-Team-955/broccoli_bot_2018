@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <boost/asio.hpp>
+#include <boost/format.hpp>
+using namespace boost::asio;
+
 #include <iostream>
 #include <chrono>
 
@@ -18,13 +22,7 @@
 #include <histogram.hpp>
 #include <histogram_visuals.hpp>
 
-#include <motion_server_connection.hpp>
-
-/* TODO: 
- * Move all top-level operations (literally everything in main() that isn't command line parsing) into a class
- * Use the shiny new socket classes you made for the robotics team
- * Unit tests? Unit tests.
- */
+// TODO: Rewrite this whole garbage heap.
 
 void print_usage (char* program_name) {
     fprintf(stderr, "Usage: %s <config.yml> -d <dataset_dir> -s\n"
@@ -93,9 +91,10 @@ int main (int argc, char** argv) {
         fs.release();
     }
 
-    // Socket communication
-    MotionServerConnection* sock = nullptr;
-    if (enable_networking) sock = new MotionServerConnection(ip, port, client_id);
+    io_service io_service;
+    ip::udp::socket socket(io_service);
+    ip::udp::endpoint remote_endpoint = ip::udp::endpoint(ip::address::from_string(ip), port);
+    socket.open(ip::udp::v4());
 
     // Redudant for now, but will become relevant with other crops and detection methods.
     DeclarativeBroccoliLocator* decl_broc_locator_cast = static_cast<DeclarativeBroccoliLocator*>(locator); 
@@ -125,9 +124,6 @@ int main (int argc, char** argv) {
         if (!paused) frameset = source->next().reduce_width(width_reduction);
         if (frameset.bgr.empty()) break;
 
-        // Socket keepalive
-        if (enable_networking) sock->keepalive();
-
         // Set up display frame
         if (show_visuals) frameset.bgr.copyTo(display_frame);
 
@@ -147,9 +143,11 @@ int main (int argc, char** argv) {
 
             // Send detection
             if (enable_networking) {
-                if (!!sock && sock->keepalive()) {
-                    sock->send_u16(broccoli_depth);
-                }
+                boost::system::error_code err;
+                float depth_float = (float)broccoli_depth;
+                char fmt[] = "{\"Controller\":[\"debug\",{\"SetTarget\":%f}]}\n";
+                std::string msg = boost::str(boost::format(fmt) % depth_float);
+                socket.send_to(buffer(msg), remote_endpoint, 0, err);
             } else {
                 std::cout << broccoli_depth << std::endl;
             }
