@@ -17,11 +17,11 @@ WriteOnlySocket::WriteOnlySocket(std::string hostname, int portno) : portno(port
 }
 
 size_t WriteOnlySocket::write(void* data, size_t length) {
-    printf("CALL SOCK\n");
+    //printf("CALL SOCK\n");
     if (sockfd == -1) return 0;
     int ret = ::write(sockfd, data, length);
     if (ret == -1) {
-        printf("SOCK ERROR %s\n", strerror(errno));
+        //printf("SOCK ERROR %s\n", strerror(errno));
         switch (errno) {
             case EWOULDBLOCK:
                 break;

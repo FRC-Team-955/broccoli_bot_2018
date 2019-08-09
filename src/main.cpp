@@ -1,8 +1,9 @@
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
+#include <vector>
 #include <iostream>
 #include <chrono>
 
@@ -29,11 +30,12 @@
 void print_usage (char* program_name) {
     fprintf(stderr, "Usage: %s <config.yml> -d <dataset_dir> -s\n"
             "\tconfig.yml: Config file directory\n"
+            "\t-h : Show this help message and exit\n"
             "\t-d : Optional dataset directory\n"
             "\t-u : Show UI components (Requires X server)\n"
             "\t-n : Disable networking (Just prints results)\n"
-            "\t-s : Optional dataset output directory\n"
-            , program_name);
+            "\t-s : Optional dataset output directory\n",
+            program_name);
 }
 
 int main (int argc, char** argv) {
@@ -51,7 +53,7 @@ int main (int argc, char** argv) {
     bool read_from_folder = false;
 
     int opt;
-    while ((opt = getopt(argc, argv, "d:uns:")) != -1) {
+    while ((opt = getopt(argc, argv, "hd:uns:")) != -1) {
         switch (opt) {
             case 'n': enable_networking = false; break;
             case 'u': show_visuals = true; break;
@@ -61,6 +63,7 @@ int main (int argc, char** argv) {
             case 's': 
                 dataset_output_dir = optarg;
                 break;
+            case 'h': //Fallthrough, explicit case
             default:
                 print_usage(argv[0]);
                 return EXIT_FAILURE;
@@ -86,11 +89,15 @@ int main (int argc, char** argv) {
     ObjectLocator* locator = nullptr;
     FrameWriter* dataset_writer = nullptr;
     if (dataset_output_dir) 
-        dataset_writer = new FrameWriter(dataset_output_dir, (char*)"%s/mask-%i.png");
+        dataset_writer = new FrameWriter(dataset_output_dir, (char*)"%s/rois_mask-%i.png");
 
     // Read config, set up locator
     { 
         cv::FileStorage fs(config_dir, cv::FileStorage::FORMAT_YAML | cv::FileStorage::READ);
+        if (!fs.isOpened()) {
+            fprintf(stderr, "Config file at %s not found! Quitting.\n", config_dir);
+            return EXIT_FAILURE;
+        }
         locator = new DeclarativeBroccoliLocator(fs);
         fs["width_reduction"] >> width_reduction;
         fs["min_hist"] >> min_hist;
@@ -128,6 +135,7 @@ int main (int argc, char** argv) {
     bool run = true;
     bool paused = false;
 
+    // Morph blob ROI mask
     cv::Mat output_mask;
 
     while (run) {
@@ -141,21 +149,31 @@ int main (int argc, char** argv) {
         // Set up display frame
         if (show_visuals) frameset.bgr.copyTo(display_frame);
 
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        // Get ROIs from frame
+        std::vector<cv::Rect> rois = locator->locate(frameset.bgr, output_mask);
 
-        cv::Rect roi = locator->locate(frameset.bgr, output_mask);
+        // Find the largest ROI in the frame
+        cv::Rect largest_roi;
+        for (auto& roi : rois) {
+            if (roi.area() > largest_roi.area())
+                largest_roi = roi;
+        }
 
-        cv::Mat mask(output_mask.size(), CV_8UC1, cv::Scalar::all(0));
-        mask(roi) = 255;
-        cv::bitwise_and(mask, output_mask, output_mask);
-        if (dataset_writer)
+        // Create a rois_mask containing all of the rois where broccoli could be
+        if (dataset_writer) {
+            cv::Mat rois_mask(output_mask.size(), CV_8UC1, cv::Scalar::all(0));
+
+            for (auto& roi : rois)
+                rois_mask(roi) = 255;
+
+            imshow("Dataset ROI Mask", rois_mask);
+            cv::bitwise_and(rois_mask, output_mask, output_mask);
             dataset_writer->next(output_mask);
-
-        std::chrono::steady_clock::time_point locate = std::chrono::steady_clock::now();
+        }
 
         // Broccoli is detected
-        if (roi.area() > 0) {
-            cv::Mat sample = frameset.depth(roi);
+        if (rois.size() > 0) {
+            cv::Mat sample = frameset.depth(largest_roi);
             depth_hist.clear();
             depth_hist.insert_image(sample);
 
@@ -167,14 +185,9 @@ int main (int argc, char** argv) {
                     sock->send_u16(broccoli_depth);
                 }
             } else {
-                std::cout << broccoli_depth << std::endl;
+                printf("Broccoli depth: %d\n", broccoli_depth);
             }
         }
-
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-        std::cout << "Locate time: " << std::chrono::duration_cast<std::chrono::milliseconds>(locate - begin).count() << "ms ";
-        std::cout << "Hist time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - locate).count() << "ms" <<std::endl;
 
         // Handle UI
         if (show_visuals) {
@@ -185,7 +198,7 @@ int main (int argc, char** argv) {
             }
 
             // Display a box around the ROI
-            cv::rectangle(display_frame, roi, cv::Scalar(0, 255, 128), 1);
+            cv::rectangle(display_frame, largest_roi, cv::Scalar(0, 255, 128), 1);
             imshow("display_frame", display_frame);
             //HistogramVisuals<unsigned short>::show_internals(depth_hist, "histogram");
 

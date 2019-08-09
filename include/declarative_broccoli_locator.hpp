@@ -3,13 +3,14 @@
 #include <opencv2/opencv.hpp>
 #include <bgrd_frame_source.hpp>
 #include <object_locator.hpp>
+#include <vector>
 
 class DeclarativeBroccoliLocator : public ObjectLocator {
     friend class DeclarativeBroccoliLocatorVisuals;
     public:
         DeclarativeBroccoliLocator(cv::FileStorage& file);
         DeclarativeBroccoliLocator(cv::Vec3i min_hsv, cv::Vec3i max_hsv, int laplacian_threshold, int area_threshold, int morph_size);
-        cv::Rect locate(cv::Mat& frame, cv::Mat& output_mask); 
+        std::vector<cv::Rect> locate(cv::Mat& frame, cv::Mat& output_mask); 
 
         void load_parameters(cv::FileStorage& file);
         void save_parameters(cv::FileStorage& file);

@@ -15,13 +15,11 @@ void DeclarativeBroccoliLocatorVisuals::init_sliders(DeclarativeBroccoliLocator&
     cv::createTrackbar("Area thresh", window_name, &locator.area_threshold, 2000);
 }
 
-#define SHOW(NAME) cv::imshow(#NAME, NAME)
 void DeclarativeBroccoliLocatorVisuals::show_internals(DeclarativeBroccoliLocator& locator) {
-    if (!locator.hsv_mask.empty()) SHOW(locator.hsv_mask);
-    if (!locator.large_blob_mask.empty()) SHOW(locator.large_blob_mask);
-    if (!locator.laplacian_confirmed.empty()) SHOW(locator.laplacian_confirmed);
+    if (!locator.hsv_mask.empty()) cv::imshow("HSV Mask", locator.hsv_mask);
+    if (!locator.large_blob_mask.empty()) cv::imshow("Large blob mask", locator.large_blob_mask);
+    if (!locator.laplacian_confirmed.empty()) cv::imshow("Laplacian confirmed", locator.laplacian_confirmed);
 }
-#undef SHOW
 
 void DeclarativeBroccoliLocatorVisuals::draw_contours(DeclarativeBroccoliLocator& locator, cv::Mat& image, cv::Scalar color) {
     cv::drawContours(image, locator.contours, -1, color);

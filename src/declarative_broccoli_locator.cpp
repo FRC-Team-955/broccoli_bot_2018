@@ -12,7 +12,7 @@ void DeclarativeBroccoliLocator::resize_morph_element() {
     morph_element = getStructuringElement (0, cv::Size (2 * morph_size + 1, 2 * morph_size + 1));
 }
 
-cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame, cv::Mat& output_mask) {
+std::vector<cv::Rect> DeclarativeBroccoliLocator::locate(cv::Mat& frame, cv::Mat& output_mask) {
     contours.clear();
     cv::cvtColor(frame, color_hsv, cv::COLOR_RGB2HSV);
     cv::inRange(color_hsv, min_hsv, max_hsv, hsv_mask);
@@ -34,21 +34,14 @@ cv::Rect DeclarativeBroccoliLocator::locate(cv::Mat& frame, cv::Mat& output_mask
 
     for (auto& cont : contours) cont[cont.size() - 1] = cont[0];
 
-    unsigned int largest = 0;
-    int largest_index = -1;
-    for (unsigned long i = 0; i < contours.size(); i++) {
-        unsigned int area = boundingRect(contours[i]).area();
-        if (area > largest && area > area_threshold * area_threshold) {
-            largest_index = i;
-            largest = area;
-        }
+    std::vector<cv::Rect> rois_found;
+    for (auto& contour : contours) {
+        auto rect = boundingRect(contour);
+        if (rect.area() >= area_threshold) 
+            rois_found.push_back(rect);
     }
 
-    if (largest_index == -1) {
-        return cv::Rect();
-    } else {
-        return boundingRect(contours[largest_index]);
-    }
+    return rois_found;
 }
 
 #define SAVE(NAME) file << #NAME << NAME
