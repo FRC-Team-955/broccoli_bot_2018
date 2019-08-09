@@ -18,6 +18,7 @@ dependencies = [
     dependency('opencv'),
     dependency('realsense2'),
     dependency('boost', modules : ['system']),
+    dependency('threads')
 ]
 
 executable(

@@ -145,7 +145,7 @@ int main (int argc, char** argv) {
             if (enable_networking) {
                 boost::system::error_code err;
                 float depth_float = (float)broccoli_depth;
-                char fmt[] = "{\"Controller\":[\"debug\",{\"SetTarget\":%f}]}\n";
+                char fmt[] = "{\"Controller\":[\"gantry\",{\"SetTarget\":%f}]}\n";
                 std::string msg = boost::str(boost::format(fmt) % depth_float);
                 socket.send_to(buffer(msg), remote_endpoint, 0, err);
             } else {
@@ -162,6 +162,7 @@ int main (int argc, char** argv) {
         if (show_visuals) {
             // Declarative broccoli detector ONLY
             if (!!decl_broc_locator_cast) {
+		std::cout << "SHOW ME THE MONEY" << std::endl;
                 DeclarativeBroccoliLocatorVisuals::show_internals(*decl_broc_locator_cast);
                 DeclarativeBroccoliLocatorVisuals::draw_contours(*decl_broc_locator_cast, display_frame, cv::Scalar(128, 0, 255));
             }
